@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\darsh\\\\Desktop\\\\agentforge\\\\frontend\" -Recurse -Depth 3 | Where-Object {!$_.PSIsContainer} | Select-Object -ExpandProperty FullName)",
+      "Bash(npm run *)"
+    ]
+  }
+}
