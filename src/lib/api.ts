@@ -1,12 +1,33 @@
 import axios from "axios";
 import { clearToken, getToken } from "./auth";
 
+// Read the env var at call time, not at module-init time.
+// Next.js inlines NEXT_PUBLIC_ vars at build time for client bundles,
+// but reading it here (rather than in axios.create) avoids the SSR/client
+// snapshot mismatch and makes misconfiguration immediately visible.
+function getBaseURL(): string {
+  const url = process.env.NEXT_PUBLIC_API_URL;
+  if (!url && typeof window !== "undefined") {
+    console.error(
+      "[AgentForge] NEXT_PUBLIC_API_URL is not set. " +
+        "Set it in .env.local (dev) or Vercel environment variables (prod) " +
+        "and redeploy so the build picks it up."
+    );
+  }
+  // Strip any trailing slash — a double-slash in the path causes Railway
+  // to issue a redirect, which browsers silently convert POST → GET/HEAD.
+  return (url ?? "").replace(/\/+$/, "");
+}
+
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  // Do NOT set baseURL here — see interceptor below.
   headers: { "Content-Type": "application/json" },
 });
 
 api.interceptors.request.use((config) => {
+  // Set baseURL on every request so it always reflects the current env var.
+  config.baseURL = getBaseURL();
+
   const token = getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
